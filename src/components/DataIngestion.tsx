@@ -16,44 +16,81 @@ export function DataIngestion() {
     const newIncidents: any[] = [];
     let criticalCount = 0;
 
+    const ipTracker: Record<string, number> = {};
+
     lines.forEach((line, index) => {
-      // Basic heuristic parsing
-      const isCritical = line.toLowerCase().includes('error') || line.toLowerCase().includes('fail') || line.toLowerCase().includes('sql') || line.toLowerCase().includes('attack');
-      const isWarning = line.toLowerCase().includes('warn') || line.toLowerCase().includes('timeout');
-      const level = isCritical ? 'CRITICAL' : isWarning ? 'WARNING' : 'INFO';
+      const lowerLine = line.toLowerCase();
       
+      // Extract IP and Status using basic Regex patterns
+      const ipMatch = line.match(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/);
+      const ip = ipMatch ? ipMatch[0] : 'Unknown';
+      const statusMatch = line.match(/\s([2345]\d{2})\s/);
+      const status = statusMatch ? parseInt(statusMatch[1]) : 200;
+
+      // Advanced Heuristics Engine
+      const isSqli = lowerLine.includes('union select') || lowerLine.includes('or 1=1') || lowerLine.includes('--');
+      const isXss = lowerLine.includes('<script>') || lowerLine.includes('javascript:');
+      const isAuthFailure = status === 401 || status === 403 || lowerLine.includes('failed login') || lowerLine.includes('authentication failure') || lowerLine.includes('invalid user');
+      
+      let level = 'INFO';
+      let threatType: string | null = null;
+      let severity: 'Low' | 'Medium' | 'High' | 'Critical' = 'Low';
+
+      if (isSqli) {
+        level = 'CRITICAL'; threatType = 'SQL Injection (SQLi)'; severity = 'Critical';
+      } else if (isXss) {
+        level = 'CRITICAL'; threatType = 'Cross-Site Scripting (XSS)'; severity = 'High';
+      } else if (isAuthFailure) {
+        level = 'WARNING';
+        ipTracker[ip] = (ipTracker[ip] || 0) + 1;
+        // Correlate multiple auth failures from same IP into a Brute Force threat
+        if (ipTracker[ip] >= 3) {
+           level = 'CRITICAL'; threatType = 'Brute Force Attack'; severity = 'Critical';
+           ipTracker[ip] = -100; // Reset tracker to prevent spam
+        }
+      } else if (status >= 500) {
+        level = 'WARNING';
+      } else if (lowerLine.includes('error') || lowerLine.includes('exception') || lowerLine.includes('fatal')) {
+        level = 'WARNING';
+      }
+
+      if (level === 'CRITICAL') criticalCount++;
+
       const log = {
         id: `LOG-${Date.now()}-${index}`,
         timestamp: new Date(Date.now() - (lines.length - index) * 60000).toISOString(),
-        source: line.includes('WAF') ? 'WAF' : line.includes('http') ? 'Network' : 'System',
+        source: (lowerLine.includes('nginx') || lowerLine.includes('apache')) ? 'Web Server' : lowerLine.includes('sshd') ? 'Auth Service' : 'System',
         level,
-        message: line.substring(0, 100) + (line.length > 100 ? '...' : ''),
-        path: '-'
+        message: line.substring(0, 150) + (line.length > 150 ? '...' : ''),
+        path: ip !== 'Unknown' ? `IP: ${ip}` : '-'
       };
       newLogs.push(log);
 
-      if (isCritical) {
-        criticalCount++;
+      if (threatType) {
         newThreats.push({
           id: `THR-${Date.now()}-${index}`,
-          time: 'Just now',
-          source: 'Extracted from Log',
-          type: line.toLowerCase().includes('sql') ? 'SQL Injection' : 'Anomaly',
-          severity: 'Critical',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: ip !== 'Unknown' ? ip : 'Log Extraction',
+          type: threatType,
+          severity,
           status: 'Open'
         });
-        
-        if (criticalCount % 3 === 0) {
-          newIncidents.push({
-            id: `INC-${Date.now()}-${index}`,
-            title: `High severity pattern detected: ${log.message.substring(0, 30)}`,
-            status: 'Open',
-            severity: 'High',
-            assignee: 'Unassigned',
-            created: 'Just now',
-            type: 'Heuristic Match'
-          });
-        }
+      }
+    });
+
+    // Cross-Module Trigger: Generate Incidents automatically for critical threats
+    newThreats.filter(t => t.severity === 'Critical').forEach((t, i) => {
+      // Only generate incident for every 2nd critical threat to avoid spamming the Incident response team
+      if (i % 2 === 0) {
+         newIncidents.push({
+           id: `INC-AUTO-${Date.now()}-${i}`,
+           title: `Automated SOC Response: ${t.type} detected from ${t.source}`,
+           status: 'Open',
+           severity: 'Critical',
+           assignee: 'Unassigned',
+           created: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+           type: 'Heuristic Correlation'
+         });
       }
     });
 
@@ -63,7 +100,7 @@ export function DataIngestion() {
       incidents: newIncidents,
       metrics: {
         criticalAlerts: criticalCount,
-        eventsPerSecond: Math.floor(newLogs.length / 60) || 5,
+        eventsPerSecond: Math.max(Math.floor(newLogs.length / 60), 5),
         activeEndpoints: 142
       }
     };

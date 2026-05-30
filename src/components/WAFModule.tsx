@@ -13,7 +13,11 @@ const trafficData = [
   { time: '24:00', legitimate: 3490, blocked: 430 },
 ];
 
+import { useGlobalState } from '../context/GlobalState';
+
 export function WAFModule() {
+  const { threats } = useGlobalState();
+  const wafThreats = threats.filter(t => t.type.includes('SQL') || t.type.includes('XSS') || t.type.includes('Brute')).slice(0, 10);
   return (
     <div className="waf-module animate-fade-in">
       <header className="dashboard-header stagger-1">
@@ -73,11 +77,17 @@ export function WAFModule() {
               </h3>
             </div>
             <div className="feed-list">
-              <RuleItem id="941100" name="XSS Attack Detected via libinjection" hits="45,210" severity="high" />
-              <RuleItem id="942100" name="SQL Injection Attack Detected" hits="32,155" severity="critical" />
-              <RuleItem id="932100" name="Remote Command Execution" hits="12,400" severity="critical" />
-              <RuleItem id="949110" name="Inbound Anomaly Score Exceeded" hits="8,902" severity="medium" />
-              <RuleItem id="920350" name="Host header is a numeric IP address" hits="4,211" severity="low" />
+              {wafThreats.length > 0 ? wafThreats.map((threat, idx) => (
+                <RuleItem 
+                  key={threat.id}
+                  id={`WAF-RULE-${940000 + idx}`} 
+                  name={threat.type} 
+                  hits={threat.source} 
+                  severity={threat.severity.toLowerCase()} 
+                />
+              )) : (
+                 <div className="text-muted p-4 text-center">No active WAF blocks</div>
+              )}
             </div>
           </div>
         </div>
@@ -107,7 +117,7 @@ function RuleItem({ id, name, hits, severity }: any) {
       <div className="feed-content">
         <div className="feed-top">
           <span className="feed-type">{name}</span>
-          <span className="feed-time font-bold">{hits} hits</span>
+          <span className="feed-time font-bold">{hits}</span>
         </div>
         <div className="feed-src mono" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Rule ID: {id}</div>
       </div>

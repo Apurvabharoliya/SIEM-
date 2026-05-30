@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Bot, Send, X, TerminalSquare } from 'lucide-react';
+import { useGlobalState } from '../context/GlobalState';
 import './AICopilot.css';
 
 interface AICopilotProps {
@@ -8,6 +9,7 @@ interface AICopilotProps {
 }
 
 export function AICopilot({ isOpen, onClose }: AICopilotProps) {
+  const { metrics, threats, incidents } = useGlobalState();
   const [messages, setMessages] = useState([
     { role: 'system', content: 'SentinelIQ AI Assistant online. How can I assist with your threat hunting today?' }
   ]);
@@ -25,9 +27,29 @@ export function AICopilot({ isOpen, onClose }: AICopilotProps) {
     // Simulate AI response
     setTimeout(() => {
       let response = "I've analyzed the recent logs. No immediate anomalies detected in the current timeframe.";
-      if (query.toLowerCase().includes('sql') || query.toLowerCase().includes('brute')) {
-        response = "I see multiple SQL Injection attempts originating from 45.22.19.11. I recommend updating the WAF ruleset to block this IP subnet immediately.";
+      const q = query.toLowerCase();
+
+      if (q.includes('status') || q.includes('report') || q.includes('summary')) {
+        response = `Current SOC Status: We are processing ${metrics.eventsPerSecond} events per second across ${metrics.activeEndpoints} endpoints. There are currently ${metrics.criticalAlerts} critical alerts requiring attention.`;
+      } else if (q.includes('threat') || q.includes('attack') || q.includes('sql') || q.includes('brute')) {
+        const criticalThreats = threats.filter(t => t.severity === 'Critical' || t.severity === 'High');
+        if (criticalThreats.length > 0) {
+           const latest = criticalThreats[0];
+           response = `I've identified ${criticalThreats.length} high/critical threats. The most recent is a [${latest.type}] from ${latest.source}. I recommend investigating this in the Incidents module.`;
+        } else {
+           response = "I don't see any critical threats in the recent timeline. The environment appears stable.";
+        }
+      } else if (q.includes('incident') || q.includes('case') || q.includes('open')) {
+        const openIncidents = incidents.filter(i => i.status === 'Open');
+        if (openIncidents.length > 0) {
+           response = `You have ${openIncidents.length} open incidents. The most recent one is "${openIncidents[0].title}". You should assign this to an analyst immediately.`;
+        } else {
+           response = "There are no open incidents at this time. Great job keeping the queue clean!";
+        }
+      } else if (metrics.criticalAlerts > 0) {
+        response = `I'm monitoring the environment. Please note we have ${metrics.criticalAlerts} critical alerts pending review. Let me know if you want me to analyze a specific vector.`;
       }
+
       setMessages(prev => [...prev, { role: 'system', content: response }]);
     }, 1000);
   };

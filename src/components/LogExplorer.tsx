@@ -8,6 +8,20 @@ export function LogExplorer() {
   const [searchQuery, setSearchQuery] = useState('');
   const { logs } = useGlobalState();
   
+  const filteredLogs = logs.filter(log => {
+    if (!searchQuery) return true;
+    try {
+      const regex = new RegExp(searchQuery, 'i');
+      return regex.test(log.message) || regex.test(log.source) || regex.test(log.level) || regex.test(log.path);
+    } catch {
+      const q = searchQuery.toLowerCase();
+      return log.message.toLowerCase().includes(q) || 
+             log.source.toLowerCase().includes(q) || 
+             log.level.toLowerCase().includes(q) ||
+             log.path.toLowerCase().includes(q);
+    }
+  });
+  
   return (
     <div className="log-explorer animate-fade-in">
       <header className="log-header stagger-1">
@@ -51,7 +65,7 @@ export function LogExplorer() {
         <div className="log-viewer-header">
           <Terminal size={18} className="text-cyan" />
           <span>System Stream</span>
-          <span className="log-count text-muted">{logs.length} events matched</span>
+          <span className="log-count text-muted">{filteredLogs.length} events matched</span>
         </div>
         
         <div className="log-table-container">
@@ -66,7 +80,7 @@ export function LogExplorer() {
               </tr>
             </thead>
             <tbody>
-              {logs.map(log => (
+              {filteredLogs.map(log => (
                 <tr key={log.id} className="log-row">
                   <td className="mono text-muted whitespace-nowrap">{log.timestamp}</td>
                   <td>

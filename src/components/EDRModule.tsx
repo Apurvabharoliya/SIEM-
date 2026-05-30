@@ -22,7 +22,8 @@ const vulnerabilitiesData = [
 ];
 
 export function EDRModule() {
-  const { metrics } = useGlobalState();
+  const { metrics, logs } = useGlobalState();
+  const edrLogs = logs.filter(l => l.source === 'System' || l.source === 'Auth Service').slice(0, 10);
 
   return (
     <div className="edr-module animate-fade-in">
@@ -103,10 +104,17 @@ export function EDRModule() {
               </h3>
             </div>
             <div className="feed-list">
-              <ProcessItem process="powershell.exe" path="C:\Windows\System32" user="NT AUTHORITY\SYSTEM" suspicious />
-              <ProcessItem process="chrome.exe" path="C:\Program Files\Google" user="user_desktop" />
-              <ProcessItem process="svchost.exe" path="C:\Windows\System32" user="NT AUTHORITY\NETWORK SERVICE" />
-              <ProcessItem process="mimikatz.exe" path="C:\Temp" user="user_desktop" suspicious />
+              {edrLogs.length > 0 ? edrLogs.map(log => (
+                <ProcessItem 
+                  key={log.id}
+                  process={log.message.split(' ')[0] || 'process.exe'} 
+                  path={log.path} 
+                  user={log.source} 
+                  suspicious={log.level === 'CRITICAL' || log.level === 'WARNING'} 
+                />
+              )) : (
+                 <div className="text-muted p-4 text-center">No recent endpoint activity</div>
+              )}
             </div>
           </div>
         </div>

@@ -24,34 +24,31 @@ export function AICopilot({ isOpen, onClose }: AICopilotProps) {
     const query = input;
     setInput('');
     
-    // Simulate AI response
-    setTimeout(() => {
-      let response = "I've analyzed the recent logs. No immediate anomalies detected in the current timeframe.";
-      const q = query.toLowerCase();
+    // Call backend AI API
+    const fetchAIResponse = async () => {
+      try {
+        const res = await fetch('http://localhost:3001/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: query,
+            context: { metrics, threats, incidents }
+          })
+        });
 
-      if (q.includes('status') || q.includes('report') || q.includes('summary')) {
-        response = `Current SOC Status: We are processing ${metrics.eventsPerSecond} events per second across ${metrics.activeEndpoints} endpoints. There are currently ${metrics.criticalAlerts} critical alerts requiring attention.`;
-      } else if (q.includes('threat') || q.includes('attack') || q.includes('sql') || q.includes('brute')) {
-        const criticalThreats = threats.filter(t => t.severity === 'Critical' || t.severity === 'High');
-        if (criticalThreats.length > 0) {
-           const latest = criticalThreats[0];
-           response = `I've identified ${criticalThreats.length} high/critical threats. The most recent is a [${latest.type}] from ${latest.source}. I recommend investigating this in the Incidents module.`;
-        } else {
-           response = "I don't see any critical threats in the recent timeline. The environment appears stable.";
-        }
-      } else if (q.includes('incident') || q.includes('case') || q.includes('open')) {
-        const openIncidents = incidents.filter(i => i.status === 'Open');
-        if (openIncidents.length > 0) {
-           response = `You have ${openIncidents.length} open incidents. The most recent one is "${openIncidents[0].title}". You should assign this to an analyst immediately.`;
-        } else {
-           response = "There are no open incidents at this time. Great job keeping the queue clean!";
-        }
-      } else if (metrics.criticalAlerts > 0) {
-        response = `I'm monitoring the environment. Please note we have ${metrics.criticalAlerts} critical alerts pending review. Let me know if you want me to analyze a specific vector.`;
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
+        
+        setMessages(prev => [...prev, { role: 'system', content: data.response }]);
+      } catch (error) {
+        console.error('Failed to get AI response:', error);
+        setMessages(prev => [...prev, { role: 'system', content: 'Connection to Sentinel AI backend failed. Please check network status.' }]);
       }
+    };
 
-      setMessages(prev => [...prev, { role: 'system', content: response }]);
-    }, 1000);
+    fetchAIResponse();
   };
 
   return (

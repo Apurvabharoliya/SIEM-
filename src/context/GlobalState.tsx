@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { io, Socket } from 'socket.io-client';
 
 export type AlertSeverity = 'Critical' | 'High' | 'Medium' | 'Low';
 
@@ -68,6 +69,22 @@ export function GlobalStateProvider({ children }: { children: React.ReactNode })
       }));
     }
   };
+
+  useEffect(() => {
+    const socket: Socket = io('http://localhost:3001');
+
+    socket.on('connect', () => {
+      console.log('Connected to SIEM Backend');
+    });
+
+    socket.on('siem_event', (data) => {
+      ingestData(data);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   return (
     <GlobalStateContext.Provider value={{ threats, setThreats, logs, setLogs, incidents, setIncidents, metrics, setMetrics, ingestData }}>

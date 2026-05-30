@@ -1,45 +1,71 @@
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { Activity, ShieldAlert, Cpu, Network, Server, Globe, Zap, AlertOctagon } from 'lucide-react';
+import { useMemo } from 'react';
 import { useGlobalState } from '../context/GlobalState';
 import './DashboardOverview.css';
 
-// Mock Data for Charts
-const threatData = [
-  { time: '00:00', threats: 12, blocked: 10, bypassed: 2 },
-  { time: '04:00', threats: 19, blocked: 18, bypassed: 1 },
-  { time: '08:00', threats: 45, blocked: 43, bypassed: 2 },
-  { time: '12:00', threats: 120, blocked: 115, bypassed: 5 },
-  { time: '16:00', threats: 85, blocked: 82, bypassed: 3 },
-  { time: '20:00', threats: 40, blocked: 40, bypassed: 0 },
-  { time: '24:00', threats: 25, blocked: 24, bypassed: 1 },
-];
-
-const alertSeverityData = [
-  { name: 'Critical', value: 24, fill: 'var(--accent-red)' },
-  { name: 'High', value: 89, fill: 'var(--accent-yellow)' },
-  { name: 'Medium', value: 256, fill: 'var(--accent-blue)' },
-  { name: 'Low', value: 840, fill: 'var(--accent-cyan)' },
-];
-
-const attackVectors = [
-  { name: 'SQL Injection', value: 400, color: '#ef4444' },
-  { name: 'Cross-Site Scripting', value: 300, color: '#f59e0b' },
-  { name: 'DDoS', value: 200, color: '#8b5cf6' },
-  { name: 'Malware', value: 150, color: '#10b981' },
-  { name: 'Phishing', value: 100, color: '#3b82f6' },
-];
-
-const endpointRadar = [
-  { subject: 'CPU Usage', A: 85, fullMark: 100 },
-  { subject: 'Memory', A: 65, fullMark: 100 },
-  { subject: 'Network I/O', A: 90, fullMark: 100 },
-  { subject: 'Storage', A: 45, fullMark: 100 },
-  { subject: 'Latency', A: 30, fullMark: 100 },
-];
-
 export function DashboardOverview() {
   const { metrics, threats } = useGlobalState();
+
+  // Dynamically compute Alert Severity based on real threats
+  const alertSeverityData = useMemo(() => {
+    const counts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+    threats.forEach(t => {
+      if (counts[t.severity] !== undefined) counts[t.severity]++;
+    });
+    return [
+      { name: 'Critical', value: counts.Critical, fill: 'var(--accent-red)' },
+      { name: 'High', value: counts.High, fill: 'var(--accent-yellow)' },
+      { name: 'Medium', value: counts.Medium, fill: 'var(--accent-blue)' },
+      { name: 'Low', value: counts.Low || 10, fill: 'var(--accent-cyan)' }, // base value for visual
+    ];
+  }, [threats]);
+
+  // Dynamically compute attack vectors
+  const attackVectors = useMemo(() => {
+    const vectors: Record<string, number> = {};
+    threats.forEach(t => {
+      vectors[t.type] = (vectors[t.type] || 0) + 1;
+    });
+    // Add some base data if no threats yet
+    if (Object.keys(vectors).length === 0) {
+      vectors['SQL Injection'] = 1;
+      vectors['Cross-Site Scripting'] = 1;
+    }
+    
+    const colors = ['#ef4444', '#f59e0b', '#8b5cf6', '#10b981', '#3b82f6'];
+    return Object.entries(vectors).map(([name, value], i) => ({
+      name,
+      value,
+      color: colors[i % colors.length]
+    })).sort((a,b) => b.value - a.value).slice(0, 5);
+  }, [threats]);
+
+  // Simulate a dynamic threat timeline based on recent threats vs historical baseline
+  const threatData = useMemo(() => {
+    const data = [];
+    for(let i = -6; i <= 0; i++) {
+      let time = new Date(Date.now() + i * 3600000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      let threatsCount = (i === 0) ? threats.length * 2 + 10 : Math.floor(Math.random() * 50) + 10;
+      data.push({
+        time,
+        threats: threatsCount,
+        blocked: Math.floor(threatsCount * 0.9),
+        bypassed: Math.floor(threatsCount * 0.1)
+      });
+    }
+    return data;
+  }, [threats.length]);
+
+  const endpointRadar = useMemo(() => [
+    { subject: 'CPU Usage', A: Math.floor(Math.random() * 40) + 40, fullMark: 100 },
+    { subject: 'Memory', A: Math.floor(Math.random() * 30) + 50, fullMark: 100 },
+    { subject: 'Network I/O', A: metrics.eventsPerSecond, fullMark: 100 },
+    { subject: 'Storage', A: 45, fullMark: 100 },
+    { subject: 'Latency', A: Math.floor(Math.random() * 20) + 20, fullMark: 100 },
+  ], [metrics.eventsPerSecond]);
+
 
   return (
     <div className="dashboard-overview animate-fade-in">

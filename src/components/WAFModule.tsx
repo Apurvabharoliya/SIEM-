@@ -17,7 +17,7 @@ import { useGlobalState } from '../context/GlobalState';
 
 export function WAFModule() {
   const { threats } = useGlobalState();
-  const wafThreats = threats.filter(t => t.type.includes('SQL') || t.type.includes('XSS') || t.type.includes('Brute')).slice(0, 10);
+  const wafThreats = threats.slice(0, 10);
   return (
     <div className="waf-module animate-fade-in">
       <header className="dashboard-header stagger-1">

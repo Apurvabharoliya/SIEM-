@@ -23,7 +23,7 @@ const vulnerabilitiesData = [
 
 export function EDRModule() {
   const { metrics, logs } = useGlobalState();
-  const edrLogs = logs.filter(l => l.source === 'System' || l.source === 'Auth Service').slice(0, 10);
+  const edrLogs = logs.filter(l => l.source === 'System' || l.source === 'Auth Service' || l.source === 'Web Server').slice(0, 10);
 
   return (
     <div className="edr-module animate-fade-in">

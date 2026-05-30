@@ -121,7 +121,18 @@ export function DataIngestion() {
         // Try parsing as JSON first
         try {
           const json = JSON.parse(result);
-          if (json.logs || json.incidents) {
+          if (json.logs && Array.isArray(json.logs)) {
+             // We have JSON logs, let's run heuristics on their messages to generate threats and incidents
+             const textLines = json.logs.map((l: any) => l.message || JSON.stringify(l)).join('\n');
+             const heuristicsData = processTextAsLogs(textLines);
+             
+             parsedData = {
+               logs: json.logs,
+               threats: [...(json.threats || []), ...heuristicsData.threats],
+               incidents: [...(json.incidents || []), ...heuristicsData.incidents],
+               metrics: heuristicsData.metrics
+             };
+          } else if (json.incidents || json.threats) {
              parsedData = json;
           } else {
              // It's JSON but maybe array of strings or unknown
@@ -154,7 +165,17 @@ export function DataIngestion() {
     // Simulate fetching from URL since we can't easily bypass CORS on client side
     // In a real app this would call a backend proxy
     setTimeout(() => {
-      const mockFetchedData = processTextAsLogs(`Connected to ${url}\nReceived HTTP 200 OK\nWARN: High latency detected from upstream\nINFO: Syncing resources...`);
+      const mockFetchedData = processTextAsLogs(`Connected to ${url}
+Received HTTP 200 OK
+WARN: High latency detected from upstream
+INFO: Syncing resources...
+[Error] SQL syntax error: union select * from users;
+[Auth] 192.168.1.1 - failed login attempt
+[Auth] 192.168.1.1 - authentication failure
+[Auth] 192.168.1.1 - invalid user detected
+[XSS] <script>alert(document.cookie)</script>
+sshd: Accepted publickey for root
+nginx: GET /wp-admin 404 Not Found`);
       ingestData(mockFetchedData);
       setStatus('success');
     }, 1500);

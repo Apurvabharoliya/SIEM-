@@ -1,6 +1,6 @@
 
 import { NavLink } from 'react-router-dom';
-import { Shield, Activity, FileText, AlertTriangle, Lock, Settings, LogOut } from 'lucide-react';
+import { Shield, Activity, FileText, AlertTriangle, Lock, Settings, LogOut, Database } from 'lucide-react';
 import './Sidebar.css';
 
 export function Sidebar() {
@@ -10,6 +10,7 @@ export function Sidebar() {
     { icon: AlertTriangle, label: 'Incidents', path: '/incidents' },
     { icon: Shield, label: 'EDR / XDR', path: '/edr' },
     { icon: Lock, label: 'WAF Rules', path: '/waf' },
+    { icon: Database, label: 'Data Ingestion', path: '/ingestion' },
   ];
 
   return (

@@ -7,6 +7,7 @@ import { LogExplorer } from './components/LogExplorer';
 import { Incidents } from './components/Incidents';
 import { EDRModule } from './components/EDRModule';
 import { WAFModule } from './components/WAFModule';
+import { DataIngestion } from './components/DataIngestion';
 import { AICopilot } from './components/AICopilot';
 import { GlobalStateProvider } from './context/GlobalState';
 import './index.css';
@@ -27,6 +28,7 @@ function App() {
               <Route path="/incidents" element={<Incidents />} />
               <Route path="/edr" element={<EDRModule />} />
               <Route path="/waf" element={<WAFModule />} />
+              <Route path="/ingestion" element={<DataIngestion />} />
             </Routes>
             
             {/* AI Copilot Floating Button */}

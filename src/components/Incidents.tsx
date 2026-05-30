@@ -1,17 +1,11 @@
 import { useState } from 'react';
 import { Search, AlertTriangle, Play, Clock } from 'lucide-react';
+import { useGlobalState } from '../context/GlobalState';
 import './Incidents.css';
-
-const MOCK_INCIDENTS = [
-  { id: 'INC-2026-001', title: 'Multiple Failed Login Attempts', status: 'Open', severity: 'High', assignee: 'Unassigned', created: '10 mins ago', type: 'Brute Force' },
-  { id: 'INC-2026-002', title: 'Suspicious PowerShell Execution', status: 'Investigating', severity: 'Critical', assignee: 'Alex SOC', created: '1 hour ago', type: 'Malware' },
-  { id: 'INC-2026-003', title: 'WAF Rule Triggered: SQLi Payload', status: 'Open', severity: 'High', assignee: 'Unassigned', created: '2 hours ago', type: 'Web Attack' },
-  { id: 'INC-2026-004', title: 'Unusual Data Exfiltration Volume', status: 'Resolved', severity: 'Medium', assignee: 'Sarah Lead', created: '1 day ago', type: 'Data Leak' },
-  { id: 'INC-2026-005', title: 'New Admin User Created', status: 'Open', severity: 'Low', assignee: 'Unassigned', created: '1 day ago', type: 'Privilege' },
-];
 
 export function Incidents() {
   const [activeTab, setActiveTab] = useState('open');
+  const { incidents } = useGlobalState();
 
   return (
     <div className="incidents-module animate-fade-in">
@@ -28,19 +22,19 @@ export function Incidents() {
       <div className="incidents-stats stagger-2">
         <div className="glass-panel stat-box">
           <div className="stat-label">Open Incidents</div>
-          <div className="stat-number text-red">3</div>
+          <div className="stat-number text-red">{incidents.filter(i => i.status === 'Open').length}</div>
         </div>
         <div className="glass-panel stat-box">
           <div className="stat-label">In Progress</div>
-          <div className="stat-number text-yellow">1</div>
+          <div className="stat-number text-yellow">{incidents.filter(i => i.status === 'Investigating').length}</div>
         </div>
         <div className="glass-panel stat-box">
           <div className="stat-label">Resolved (24h)</div>
-          <div className="stat-number text-green">14</div>
+          <div className="stat-number text-green">{incidents.filter(i => i.status === 'Resolved').length}</div>
         </div>
         <div className="glass-panel stat-box">
-          <div className="stat-label">Avg Triage Time</div>
-          <div className="stat-number text-cyan">4m 12s</div>
+          <div className="stat-label">Total Cases</div>
+          <div className="stat-number text-cyan">{incidents.length}</div>
         </div>
       </div>
 
@@ -60,7 +54,7 @@ export function Incidents() {
           </div>
 
           <div className="incident-list">
-            {MOCK_INCIDENTS.map((inc) => (
+            {incidents.map((inc) => (
               <div key={inc.id} className="incident-card">
                 <div className="inc-card-header">
                   <span className="inc-id mono">{inc.id}</span>

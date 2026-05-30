@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 export type AlertSeverity = 'Critical' | 'High' | 'Medium' | 'Low';
 
@@ -11,51 +11,59 @@ export interface Threat {
   status: 'Open' | 'Investigating' | 'Resolved';
 }
 
+export interface LogEntry {
+  id: string;
+  timestamp: string;
+  source: string;
+  level: string;
+  message: string;
+  path: string;
+}
+
+export interface Incident {
+  id: string;
+  title: string;
+  status: string;
+  severity: string;
+  assignee: string;
+  created: string;
+  type: string;
+}
+
 interface GlobalStateContextType {
   threats: Threat[];
   setThreats: React.Dispatch<React.SetStateAction<Threat[]>>;
-  addThreat: (threat: Threat) => void;
-  metrics: {
-    criticalAlerts: number;
-    eventsPerSecond: number;
-    activeEndpoints: number;
-  };
+  logs: LogEntry[];
+  setLogs: React.Dispatch<React.SetStateAction<LogEntry[]>>;
+  incidents: Incident[];
+  setIncidents: React.Dispatch<React.SetStateAction<Incident[]>>;
+  metrics: any;
   setMetrics: React.Dispatch<React.SetStateAction<any>>;
+  ingestData: (data: any) => void;
 }
 
 const GlobalStateContext = createContext<GlobalStateContextType | undefined>(undefined);
 
 export function GlobalStateProvider({ children }: { children: React.ReactNode }) {
-  const [threats, setThreats] = useState<Threat[]>([
-    { id: '1', time: 'Just now', source: '192.168.1.105', type: 'Brute Force', severity: 'Critical', status: 'Open' },
-    { id: '2', time: '2m ago', source: '45.22.19.11', type: 'SQL Injection', severity: 'High', status: 'Investigating' },
-    { id: '3', time: '5m ago', source: '10.0.0.44', type: 'Privilege Escalation', severity: 'Critical', status: 'Open' },
-    { id: '4', time: '12m ago', source: '104.22.54.12', type: 'Rate Limit Exceeded', severity: 'Medium', status: 'Resolved' },
-  ]);
+  const [threats, setThreats] = useState<Threat[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
 
   const [metrics, setMetrics] = useState({
-    criticalAlerts: 24,
-    eventsPerSecond: 14250,
-    activeEndpoints: 1845,
+    criticalAlerts: 0,
+    eventsPerSecond: 0,
+    activeEndpoints: 0,
   });
 
-  const addThreat = (threat: Threat) => {
-    setThreats(prev => [threat, ...prev]);
+  const ingestData = (data: any) => {
+    if (data.threats) setThreats(data.threats);
+    if (data.logs) setLogs(data.logs);
+    if (data.incidents) setIncidents(data.incidents);
+    if (data.metrics) setMetrics(data.metrics);
   };
 
-  // Simulate real-time data ingestion
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMetrics(prev => ({
-        ...prev,
-        eventsPerSecond: prev.eventsPerSecond + Math.floor(Math.random() * 100) - 50,
-      }));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <GlobalStateContext.Provider value={{ threats, setThreats, addThreat, metrics, setMetrics }}>
+    <GlobalStateContext.Provider value={{ threats, setThreats, logs, setLogs, incidents, setIncidents, metrics, setMetrics, ingestData }}>
       {children}
     </GlobalStateContext.Provider>
   );

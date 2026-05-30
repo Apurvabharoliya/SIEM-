@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Filter, AlertTriangle, ChevronRight, Play, CheckCircle, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { Search, AlertTriangle, Play, Clock } from 'lucide-react';
 import './Incidents.css';
 
 const MOCK_INCIDENTS = [
@@ -60,7 +60,7 @@ export function Incidents() {
           </div>
 
           <div className="incident-list">
-            {MOCK_INCIDENTS.map((inc, i) => (
+            {MOCK_INCIDENTS.map((inc) => (
               <div key={inc.id} className="incident-card">
                 <div className="inc-card-header">
                   <span className="inc-id mono">{inc.id}</span>

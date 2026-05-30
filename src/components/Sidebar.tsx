@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { NavLink } from 'react-router-dom';
 import { Shield, Activity, FileText, AlertTriangle, Lock, Settings, LogOut } from 'lucide-react';
 import './Sidebar.css';

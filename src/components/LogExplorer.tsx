@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, Filter, Download, Terminal, Play, Pause, ChevronDown } from 'lucide-react';
 import './LogExplorer.css';
 

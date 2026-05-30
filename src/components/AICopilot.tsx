@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Bot, Send, X, TerminalSquare } from 'lucide-react';
 import './AICopilot.css';
 

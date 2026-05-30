@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { Server, HardDrive, Cpu, ShieldAlert, Activity } from 'lucide-react';
 import { useGlobalState } from '../context/GlobalState';

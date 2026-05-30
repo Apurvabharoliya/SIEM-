@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Globe, Shield, Lock, AlertTriangle, Map } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import './WAFModule.css';

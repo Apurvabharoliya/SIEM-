@@ -10,7 +10,6 @@ import { WAFModule } from './components/WAFModule';
 import { DataIngestion } from './components/DataIngestion';
 import { AICopilot } from './components/AICopilot';
 import { GlobalStateProvider } from './context/GlobalState';
-import { SimulationRunner } from './components/SimulationRunner';
 import './index.css';
 
 function App() {
@@ -18,7 +17,6 @@ function App() {
 
   return (
     <GlobalStateProvider>
-      <SimulationRunner />
       <Router>
         <div className="app-container">
           <Sidebar />

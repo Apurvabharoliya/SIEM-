@@ -56,10 +56,17 @@ export function GlobalStateProvider({ children }: { children: React.ReactNode })
   });
 
   const ingestData = (data: any) => {
-    if (data.threats) setThreats(data.threats);
-    if (data.logs) setLogs(data.logs);
-    if (data.incidents) setIncidents(data.incidents);
-    if (data.metrics) setMetrics(data.metrics);
+    if (data.threats) setThreats(prev => [...data.threats, ...prev]);
+    if (data.logs) setLogs(prev => [...data.logs, ...prev]);
+    if (data.incidents) setIncidents(prev => [...data.incidents, ...prev]);
+    if (data.metrics) {
+      setMetrics((prev: any) => ({
+        ...prev,
+        criticalAlerts: prev.criticalAlerts + (data.metrics.criticalAlerts || 0),
+        eventsPerSecond: data.metrics.eventsPerSecond || prev.eventsPerSecond,
+        activeEndpoints: data.metrics.activeEndpoints || prev.activeEndpoints
+      }));
+    }
   };
 
   return (

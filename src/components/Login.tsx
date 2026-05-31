@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
@@ -7,15 +7,24 @@ export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [success, setSuccess] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state && location.state.message) {
+      setSuccess(location.state.message);
+      // Clear the state so the message doesn't persist on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const url = isRegistering ? 'http://localhost:3001/api/auth/register' : 'http://localhost:3001/api/auth/login';
+    const url = 'http://localhost:3001/api/auth/login';
 
     try {
       const response = await fetch(url, {
@@ -23,20 +32,13 @@ export const Login: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password, role: 'Analyst' }), // Default role for now
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Authentication failed');
-      }
-
-      if (isRegistering) {
-        // Automatically login after successful registration or show success message
-        setIsRegistering(false);
-        setError('Registration successful! Please login.');
-        return;
       }
 
       login(data.token, data.user);
@@ -50,9 +52,10 @@ export const Login: React.FC = () => {
     <div className="login-container">
       <div className="login-card">
         <h2 className="login-title">SentinelIQ</h2>
-        <p className="login-subtitle">{isRegistering ? 'Create an account' : 'Sign in to your account'}</p>
+        <p className="login-subtitle">Sign in to your account</p>
         
-        {error && <div className={`login-error ${error.includes('successful') ? 'success' : ''}`}>{error}</div>}
+        {success && <div className="login-error success">{success}</div>}
+        {error && <div className="login-error">{error}</div>}
         
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
@@ -78,15 +81,15 @@ export const Login: React.FC = () => {
             />
           </div>
           <button type="submit" className="login-submit-btn">
-            {isRegistering ? 'Register' : 'Sign In'}
+            Sign In
           </button>
         </form>
 
         <p className="login-toggle">
-          {isRegistering ? 'Already have an account? ' : 'Don\'t have an account? '}
-          <button onClick={() => { setIsRegistering(!isRegistering); setError(''); }} className="toggle-btn">
-            {isRegistering ? 'Sign In' : 'Register'}
-          </button>
+          Don't have an account?{' '}
+          <Link to="/register" className="toggle-btn" style={{ textDecoration: 'none' }}>
+            Register
+          </Link>
         </p>
       </div>
     </div>

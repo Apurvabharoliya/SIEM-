@@ -10,6 +10,7 @@ import { WAFModule } from './components/WAFModule';
 import { DataIngestion } from './components/DataIngestion';
 import { AICopilot } from './components/AICopilot';
 import { Login } from './components/Login';
+import { Register } from './components/Register';
 import { GlobalStateProvider } from './context/GlobalState';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -34,6 +35,7 @@ function App() {
             <main className="main-content relative">
               <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardOverview /></ProtectedRoute>} />
                 <Route path="/logs" element={<ProtectedRoute><LogExplorer /></ProtectedRoute>} />

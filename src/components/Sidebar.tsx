@@ -1,9 +1,17 @@
-
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Shield, Activity, FileText, AlertTriangle, Lock, Settings, LogOut, Database } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
 export function Sidebar() {
+  const { logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   const navItems = [
     { icon: Activity, label: 'Dashboard', path: '/dashboard' },
     { icon: FileText, label: 'Log Explorer', path: '/logs' },
@@ -12,6 +20,9 @@ export function Sidebar() {
     { icon: Lock, label: 'WAF Rules', path: '/waf' },
     { icon: Database, label: 'Data Ingestion', path: '/ingestion' },
   ];
+
+  // Hide sidebar if not authenticated
+  if (!isAuthenticated) return null;
 
   return (
     <aside className="sidebar glass-panel">
@@ -42,7 +53,7 @@ export function Sidebar() {
           <Settings size={20} className="text-muted" />
           <span>Settings</span>
         </button>
-        <button className="nav-item">
+        <button className="nav-item" onClick={handleLogout}>
           <LogOut size={20} className="text-muted" />
           <span>Logout</span>
         </button>

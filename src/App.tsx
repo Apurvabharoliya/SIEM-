@@ -9,27 +9,39 @@ import { EDRModule } from './components/EDRModule';
 import { WAFModule } from './components/WAFModule';
 import { DataIngestion } from './components/DataIngestion';
 import { AICopilot } from './components/AICopilot';
+import { Login } from './components/Login';
 import { GlobalStateProvider } from './context/GlobalState';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
 
 function App() {
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   return (
-    <GlobalStateProvider>
-      <Router>
-        <div className="app-container">
-          <Sidebar />
-          <main className="main-content relative">
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<DashboardOverview />} />
-              <Route path="/logs" element={<LogExplorer />} />
-              <Route path="/incidents" element={<Incidents />} />
-              <Route path="/edr" element={<EDRModule />} />
-              <Route path="/waf" element={<WAFModule />} />
-              <Route path="/ingestion" element={<DataIngestion />} />
-            </Routes>
+    <AuthProvider>
+      <GlobalStateProvider>
+        <Router>
+          <div className="app-container">
+            <Sidebar />
+            <main className="main-content relative">
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<ProtectedRoute><DashboardOverview /></ProtectedRoute>} />
+                <Route path="/logs" element={<ProtectedRoute><LogExplorer /></ProtectedRoute>} />
+                <Route path="/incidents" element={<ProtectedRoute><Incidents /></ProtectedRoute>} />
+                <Route path="/edr" element={<ProtectedRoute><EDRModule /></ProtectedRoute>} />
+                <Route path="/waf" element={<ProtectedRoute><WAFModule /></ProtectedRoute>} />
+                <Route path="/ingestion" element={<ProtectedRoute><DataIngestion /></ProtectedRoute>} />
+              </Routes>
             
             {/* AI Copilot Floating Button */}
             {!isCopilotOpen && (
@@ -47,6 +59,7 @@ function App() {
         </div>
       </Router>
     </GlobalStateProvider>
+  </AuthProvider>
   );
 }
 

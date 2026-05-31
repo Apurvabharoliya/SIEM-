@@ -7,6 +7,8 @@ import mongoose from 'mongoose';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
@@ -56,6 +58,13 @@ const Threat = mongoose.model('Threat', ThreatSchema);
 const Incident = mongoose.model('Incident', IncidentSchema);
 const Metric = mongoose.model('Metric', MetricSchema);
 
+const UserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, default: 'Analyst' }
+});
+const User = mongoose.model('User', UserSchema);
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -90,6 +99,46 @@ app.post('/api/logs/upload', upload.single('file'), async (req, res) => {
     res.status(500).json({ error: 'Upload failed' });
   }
 });
+
+// Auth Endpoints
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password, role } = req.body;
+    const existingUser = await User.findOne({ username });
+    if (existingUser) return res.status(400).json({ error: 'User already exists' });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({ username, password: hashedPassword, role });
+    await user.save();
+    res.json({ message: 'User registered successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Registration failed' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
+    const token = jwt.sign({ id: user._id, role: user.role, username: user.username }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
+    res.json({ token, user: { id: user._id, username: user.username, role: user.role } });
+  } catch (error) {
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Middleware for checking auth
+const authenticate = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  jwt.verify(token, process.env.JWT_SECRET || 'secret', (err, decoded) => {
+    if (err) return res.status(401).json({ error: 'Unauthorized' });
+    req.user = decoded;
+    next();
+  });
+};
 
 // AI Copilot Chat Endpoint
 app.post('/api/chat', async (req, res) => {

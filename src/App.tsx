@@ -13,6 +13,7 @@ import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { GlobalStateProvider } from './context/GlobalState';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { Scene3DBackground } from './components/Scene3D';
 import './index.css';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -30,7 +31,10 @@ function App() {
     <AuthProvider>
       <GlobalStateProvider>
         <Router>
-          <div className="app-container">
+          <div className="app-container scan-overlay">
+            {/* 3D Background - behind everything */}
+            <Scene3DBackground />
+
             <Sidebar />
             <main className="main-content relative">
               <Routes>
@@ -45,23 +49,23 @@ function App() {
                 <Route path="/ingestion" element={<ProtectedRoute><DataIngestion /></ProtectedRoute>} />
               </Routes>
             
-            {/* AI Copilot Floating Button */}
-            {!isCopilotOpen && (
-              <button 
-                className="fixed bottom-6 right-6 p-4 rounded-full bg-cyan-600 text-white shadow-lg hover:bg-cyan-500 transition-all z-50 flex items-center justify-center"
-                style={{ backgroundColor: 'var(--accent-cyan)', color: '#000', border: 'none', cursor: 'pointer', borderRadius: '50%', width: '60px', height: '60px', boxShadow: '0 4px 20px rgba(6, 182, 212, 0.4)' }}
-                onClick={() => setIsCopilotOpen(true)}
-              >
-                <Bot size={28} />
-              </button>
-            )}
-            
-            <AICopilot isOpen={isCopilotOpen} onClose={() => setIsCopilotOpen(false)} />
-          </main>
-        </div>
-      </Router>
-    </GlobalStateProvider>
-  </AuthProvider>
+              {/* AI Copilot Floating Button */}
+              {!isCopilotOpen && (
+                <button 
+                  className="copilot-fab"
+                  onClick={() => setIsCopilotOpen(true)}
+                >
+                  <Bot size={26} />
+                  <span className="copilot-fab-pulse" />
+                </button>
+              )}
+              
+              <AICopilot isOpen={isCopilotOpen} onClose={() => setIsCopilotOpen(false)} />
+            </main>
+          </div>
+        </Router>
+      </GlobalStateProvider>
+    </AuthProvider>
   );
 }
 

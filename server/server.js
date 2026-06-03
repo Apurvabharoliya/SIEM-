@@ -4,9 +4,6 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mysql from 'mysql2/promise';
-import multer from 'multer';
-import fs from 'fs';
-import path from 'path';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -26,7 +23,6 @@ const pool = mysql.createPool({
 // Initialize required tables if they don't exist
 (async () => {
   try {
-    // Users table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -35,7 +31,6 @@ const pool = mysql.createPool({
         role VARCHAR(50) NOT NULL DEFAULT 'Analyst'
       ) ENGINE=INNODB;
     `);
-    // Logs table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS logs (
         id VARCHAR(255) PRIMARY KEY,
@@ -46,7 +41,6 @@ const pool = mysql.createPool({
         path VARCHAR(255)
       ) ENGINE=INNODB;
     `);
-    // Threats table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS threats (
         id VARCHAR(255) PRIMARY KEY,
@@ -57,7 +51,6 @@ const pool = mysql.createPool({
         status VARCHAR(50)
       ) ENGINE=INNODB;
     `);
-    // Incidents table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS incidents (
         id VARCHAR(255) PRIMARY KEY,
@@ -69,7 +62,6 @@ const pool = mysql.createPool({
         type VARCHAR(255)
       ) ENGINE=INNODB;
     `);
-    // Metrics table (single row storage)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS metrics (
         id INT PRIMARY KEY DEFAULT 1,
@@ -85,45 +77,12 @@ const pool = mysql.createPool({
       await pool.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['demo_user', demoPassword, 'Analyst']);
       console.log('Demo user created: demo_user / demo_pass');
     }
-  } catch (err) {
-    console.error('Error initializing DB:', err);
-  }
-})();
-(async () => {
-  try {
-    // Users table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(255) NOT NULL UNIQUE,
-        password VARCHAR(255) NOT NULL,
-        role VARCHAR(50) NOT NULL DEFAULT 'Analyst'
-      ) ENGINE=INNODB;
-    `);
-    // Logs table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS logs (
-        id VARCHAR(255) PRIMARY KEY,
-        timestamp VARCHAR(255),
-        source VARCHAR(255),
-        level VARCHAR(50),
-        message TEXT,
-        path VARCHAR(255)
-      ) ENGINE=INNODB;
-    `);
-    // Ensure a demo user exists
-    const [demoRows] = await pool.query('SELECT id FROM users WHERE username = ?', ['demo_user']);
-    if (demoRows.length === 0) {
-      const demoPassword = await bcrypt.hash('demo_pass', 10);
-      await pool.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['demo_user', demoPassword, 'Analyst']);
-      console.log('Demo user created: demo_user / demo_pass');
-    }
+    console.log('Database tables initialized successfully');
   } catch (err) {
     console.error('Error initializing DB:', err);
   }
 })();
 
-// MySQL tables are accessed directly via queries; no Mongoose schemas needed.
 
 const app = express();
 const server = http.createServer(app);
@@ -137,37 +96,20 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-// Multer setup for file uploads
-const upload = multer({ dest: 'uploads/' });
+// Middleware for checking auth
+const authenticate = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  jwt.verify(token, process.env.JWT_SECRET || 'secret', (err, decoded) => {
+    if (err) return res.status(401).json({ error: 'Unauthorized' });
+    req.user = decoded;
+    next();
+  });
+};
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// File upload endpoint – expects a JSON file with an array of log entries
-app.post('/api/logs/upload', upload.single('file'), async (req, res) => {
-  try {
-    const filePath = req.file.path;
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    const data = JSON.parse(raw); // [{id, timestamp, source, level, message, path}, ...]
-    const conn = await pool.getConnection();
-    try {
-      const insertPromises = data.map(d => conn.query(
-        'INSERT INTO logs (id, timestamp, source, level, message, path) VALUES (?, ?, ?, ?, ?, ?)',
-        [d.id, d.timestamp, d.source, d.level, d.message, d.path]
-      ));
-      await Promise.all(insertPromises);
-      io.emit('siem_event', { logs: data, metrics: { eventsPerSecond: data.length } });
-    } finally {
-      conn.release();
-    }
-    fs.unlinkSync(filePath);
-    res.json({ status: 'ok' });
-  } catch (err) {
-    console.error('Upload error:', err);
-    res.status(500).json({ error: 'Upload failed' });
-  }
 });
 
 // Auth Endpoints
@@ -254,40 +196,6 @@ app.get('/api/metrics', authenticate, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch metrics' });
   }
 });
-app.post('/api/auth/demo-login', async (req, res) => {
-  try {
-    const demoUsername = 'demo_user';
-    const [rows] = await pool.query('SELECT id, role FROM users WHERE username = ?', [demoUsername]);
-    if (rows.length === 0) return res.status(500).json({ error: 'Demo user not found' });
-    const user = rows[0];
-    const token = jwt.sign({ id: user.id, role: user.role, username: demoUsername }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
-    res.json({ token, user: { id: user.id, username: demoUsername, role: user.role } });
-  } catch (err) {
-    console.error('Demo login error:', err);
-    res.status(500).json({ error: 'Demo login failed' });
-  }
-});
-
-// Middleware for checking auth
-const authenticate = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
-  jwt.verify(token, process.env.JWT_SECRET || 'secret', (err, decoded) => {
-    if (err) return res.status(401).json({ error: 'Unauthorized' });
-    req.user = decoded;
-    next();
-  });
-};
-const authenticate = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
-  jwt.verify(token, process.env.JWT_SECRET || 'secret', (err, decoded) => {
-    if (err) return res.status(401).json({ error: 'Unauthorized' });
-    req.user = decoded;
-    next();
-  });
-};
-
 // AI Copilot Chat Endpoint
 app.post('/api/chat', async (req, res) => {
   try {

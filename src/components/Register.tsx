@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import './Login.css'; // Reuse the login styles for consistency
+import { Shield, Zap } from 'lucide-react';
+import './Login.css';
 
-export const Register: React.FC = () => {
+export function Register() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('Analyst'); // Default role
+  const [role, setRole] = useState('Analyst');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,57 +23,59 @@ export const Register: React.FC = () => {
       return;
     }
 
+    setLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password, role }),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
-
-      // Automatically redirect to login after successful registration
-      navigate('/login', { state: { message: 'Registration successful! Please sign in.' } });
+      if (!response.ok) throw new Error(data.error || 'Registration failed');
+      navigate('/login');
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Registration failed');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h2 className="login-title">SentinelIQ</h2>
-        <p className="login-subtitle">Create your SOC account</p>
-        
-        {error && <div className="login-error">{error}</div>}
-        
+    <div className="login-page">
+      <div className="login-grid-bg" />
+      <div className="login-orb login-orb-1" />
+      <div className="login-orb login-orb-2" />
+      <div className="login-orb login-orb-3" />
+
+      <div className="login-container animate-fade-in-scale">
+        <div className="login-logo-section">
+          <div className="login-logo-icon">
+            <Shield size={36} />
+            <div className="login-logo-ring" />
+          </div>
+          <h1 className="login-title orbitron">SENTINEL<span className="text-cyan">SIEM</span></h1>
+          <p className="login-subtitle">Create your SOC account</p>
+        </div>
+
         <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
+          <div className="login-field">
+            <label className="login-label">USERNAME</label>
             <input
               type="text"
-              id="username"
+              className="input-cyber"
+              placeholder="Choose a username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="form-input"
             />
           </div>
-          
-          <div className="form-group">
-            <label htmlFor="role">Role</label>
+
+          <div className="login-field">
+            <label className="login-label">ROLE</label>
             <select
-              id="role"
+              className="input-cyber"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="form-input"
             >
               <option value="Analyst">Tier 1 Analyst</option>
               <option value="Responder">Tier 2 Responder</option>
@@ -77,42 +83,59 @@ export const Register: React.FC = () => {
             </select>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="form-input"
-            />
+          <div className="login-field">
+            <label className="login-label">PASSWORD</label>
+            <div className="login-password-wrap">
+              <input
+                type="password"
+                className="input-cyber"
+                placeholder="Create a password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="form-input"
-            />
+          <div className="login-field">
+            <label className="login-label">CONFIRM PASSWORD</label>
+            <div className="login-password-wrap">
+              <input
+                type="password"
+                className="input-cyber"
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
           </div>
-          
-          <button type="submit" className="login-submit-btn">
-            Register Account
+
+          {error && (
+            <div className="login-error">
+              <span className="login-error-dot" />
+              {error}
+            </div>
+          )}
+
+          <button type="submit" className="login-btn-primary" disabled={loading}>
+            {loading ? (
+              <span className="login-loading">
+                <span className="spin" style={{ display: 'inline-flex' }}><Zap size={16} /></span>
+                Creating Account...
+              </span>
+            ) : (
+              <span>CREATE ACCOUNT</span>
+            )}
           </button>
         </form>
 
-        <p className="login-toggle">
-          Already have an account?{' '}
-          <Link to="/login" className="toggle-btn" style={{ textDecoration: 'none' }}>
-            Sign In
-          </Link>
-        </p>
+        <div className="login-footer">
+          <span className="text-muted">Already have an account?{' '}
+            <Link to="/login" className="text-cyan" style={{ textDecoration: 'none' }}>Sign In</Link>
+          </span>
+        </div>
       </div>
     </div>
   );
-};
+}

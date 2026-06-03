@@ -126,7 +126,7 @@
 }
 
 .incident-card:hover {
-  background: rgba(0,0,0,0.02);
+  background: rgba(0, 212, 255, 0.04);
 }
 
 .inc-card-header {

@@ -1,114 +1,151 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Shield, Eye, EyeOff, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
-export const Login: React.FC = () => {
+export function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  useEffect(() => {
-    if (location.state && location.state.message) {
-      setSuccess(location.state.message);
-      // Clear the state so the message doesn't persist on refresh
-      window.history.replaceState({}, document.title);
-    }
-  }, [location]);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-  const handleDemoLogin = async () => {
-    try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${API_URL}/api/auth/demo-login`, { method: 'POST' });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Demo login failed');
-      login(data.token, data.user);
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
-    }
+  const doLogin = async (user: string, pass: string) => {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, password: pass }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Login failed');
+    login(data.token, data.user);
+  };
+
+  const doDemoLogin = async () => {
+    const response = await fetch(`${API_URL}/api/auth/demo-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Demo login failed');
+    login(data.token, data.user);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-    const url = `${API_URL}/api/auth/login`;
-
+    setLoading(true);
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Authentication failed');
-      }
-
-      login(data.token, data.user);
+      await doLogin(username, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Invalid credentials. Try demo_user / demo_pass');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await doDemoLogin();
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Demo login failed. Is the backend running?');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h2 className="login-title">SentinelIQ</h2>
-        <p className="login-subtitle">Sign in to your account</p>
-        
-        {success && <div className="login-error success">{success}</div>}
-        {error && <div className="login-error">{error}</div>}
-        
+    <div className="login-page">
+      {/* Animated grid background */}
+      <div className="login-grid-bg" />
+      
+      {/* Floating orbs */}
+      <div className="login-orb login-orb-1" />
+      <div className="login-orb login-orb-2" />
+      <div className="login-orb login-orb-3" />
+
+      <div className="login-container animate-fade-in-scale">
+        {/* Logo section */}
+        <div className="login-logo-section">
+          <div className="login-logo-icon">
+            <Shield size={36} />
+            <div className="login-logo-ring" />
+          </div>
+          <h1 className="login-title orbitron">SENTINEL<span className="text-cyan">SIEM</span></h1>
+          <p className="login-subtitle">Security Intelligence Platform</p>
+        </div>
+
+        {/* Form */}
         <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
+          <div className="login-field">
+            <label className="login-label">IDENTIFIER</label>
             <input
               type="text"
-              id="username"
+              className="input-cyber"
+              placeholder="Enter username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="form-input"
             />
           </div>
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="form-input"
-            />
+
+          <div className="login-field">
+            <label className="login-label">ACCESS KEY</label>
+            <div className="login-password-wrap">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="input-cyber"
+                placeholder="Enter password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="login-eye-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
-          <button type="button" onClick={handleDemoLogin} className="login-demo-btn">
-            Demo Login
+
+          {error && (
+            <div className="login-error">
+              <span className="login-error-dot" />
+              {error}
+            </div>
+          )}
+
+          <button type="submit" className="login-btn-primary" disabled={loading}>
+            {loading ? (
+              <span className="login-loading">
+                <span className="spin" style={{ display: 'inline-flex' }}><Zap size={16} /></span>
+                Authenticating...
+              </span>
+            ) : (
+              <span>ACCESS SYSTEM</span>
+            )}
           </button>
-          <button type="submit" className="login-submit-btn">
-            Sign In
+
+          <button type="button" className="login-btn-demo" onClick={handleDemoLogin} disabled={loading}>
+            Quick Demo Access
           </button>
         </form>
 
-        <p className="login-toggle">
-          Don't have an account?{' '}
-          <Link to="/register" className="toggle-btn" style={{ textDecoration: 'none' }}>
-            Register
-          </Link>
-        </p>
+        <div className="login-footer">
+          <span className="text-muted">Protected by AES-256 Encryption</span>
+        </div>
       </div>
     </div>
   );
-};
+}

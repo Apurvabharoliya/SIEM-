@@ -1,73 +1,94 @@
-# React + TypeScript + Vite
+# SentinelIQ
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SentinelIQ is a high-performance, full-stack Security Information and Event Management (SIEM) platform designed for real-time threat intelligence, log management, and incident response.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Real-Time Data Ingestion & Log Management**: View and filter high-volume log streams efficiently using UI virtualization (`react-window`).
+- **Heuristic Correlation Engine**: Intelligent log parsing and automated security incident correlation.
+- **Interactive Security Modules**: EDR/XDR, WAF, and Incident Response dashboards.
+- **Live Event Simulation & WebSockets**: Dynamic data updates driven by a real-time event engine and Socket.IO.
+- **Secure Authentication**: JWT-based user authentication and role-based access control.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Frontend
+- React 19 + TypeScript + Vite
+- React Router (Routing)
+- Recharts (Data Visualization)
+- Socket.IO Client (Real-time updates)
+- React-Window (UI Virtualization)
+- Lucide React (Icons)
 
-## Expanding the ESLint configuration
+### Backend
+- Node.js & Express
+- MySQL (Database layer)
+- Socket.IO (WebSockets)
+- JWT (Authentication)
+- bcrypt (Password Hashing)
+- multer (File Uploads)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Project Structure
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+siem-/
+├── src/           # Frontend React application
+│   ├── components/
+│   ├── pages/
+│   ├── contexts/
+│   └── ...
+├── server/        # Backend Node.js/Express application
+│   ├── server.js
+│   ├── routes/
+│   └── ...
+└── README.md
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Getting Started
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerequisites
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js (v18 or higher recommended)
+- MySQL instance running
+
+### Installation
+
+1. Clone the repository and install frontend dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Install backend dependencies:
+   ```bash
+   cd server
+   npm install
+   ```
+
+### Database Configuration
+
+Create a `.env` file in the `server` directory and configure your MySQL connection:
+
+```env
+# server/.env
+PORT=3001
+MYSQL_HOST=localhost
+MYSQL_USER=root
+MYSQL_PASSWORD=your_password
+MYSQL_DATABASE=siem
 ```
+
+### Running the Application
+
+1. **Start the Backend Server**
+   ```bash
+   cd server
+   npm run dev
+   ```
+   The backend will run with `nodemon` for hot-reloading at `http://localhost:3001`.
+
+2. **Start the Frontend Development Server**
+   Open a new terminal and run:
+   ```bash
+   npm run dev
+   ```
+   The Vite frontend will be available at `http://localhost:5173`.

@@ -71,7 +71,8 @@ export function GlobalStateProvider({ children }: { children: React.ReactNode })
   };
 
   useEffect(() => {
-    const socket: Socket = io('http://localhost:3001');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const socket: Socket = io(API_URL);
 
     socket.on('connect', () => {
       console.log('Connected to SIEM Backend');

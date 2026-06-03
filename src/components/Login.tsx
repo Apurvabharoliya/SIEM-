@@ -20,11 +20,25 @@ export const Login: React.FC = () => {
     }
   }, [location]);
 
+  const handleDemoLogin = async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/api/auth/demo-login`, { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Demo login failed');
+      login(data.token, data.user);
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const url = 'http://localhost:3001/api/auth/login';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const url = `${API_URL}/api/auth/login`;
 
     try {
       const response = await fetch(url, {
@@ -80,6 +94,9 @@ export const Login: React.FC = () => {
               className="form-input"
             />
           </div>
+          <button type="button" onClick={handleDemoLogin} className="login-demo-btn">
+            Demo Login
+          </button>
           <button type="submit" className="login-submit-btn">
             Sign In
           </button>

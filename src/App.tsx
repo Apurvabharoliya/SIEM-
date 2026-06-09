@@ -37,8 +37,8 @@ function DataErrorBanner() {
       transform: 'translateX(-50%)',
       zIndex: 9999,
       padding: '0.75rem 1.5rem',
-      background: 'rgba(255, 51, 102, 0.12)',
-      border: '1px solid rgba(255, 51, 102, 0.25)',
+      background: 'rgba(220, 38, 38, 0.08)',
+      border: '1px solid rgba(220, 38, 38, 0.2)',
       borderRadius: '10px',
       color: 'var(--accent-red)',
       fontSize: '0.85rem',
@@ -47,7 +47,7 @@ function DataErrorBanner() {
       alignItems: 'center',
       gap: '0.5rem',
       backdropFilter: 'blur(16px)',
-      boxShadow: '0 4px 30px rgba(0,0,0,0.4)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
     }}>
       <AlertTriangle size={18} />
       <span>{error}</span>
@@ -62,7 +62,7 @@ function App() {
     <AuthProvider>
       <GlobalStateProvider>
         <Router>
-          <div className="app-container scan-overlay">
+          <div className="app-container">
             {/* 3D Background - behind everything */}
             <Scene3DBackground />
 

@@ -6,6 +6,7 @@
   justify-content: center;
   z-index: 100;
   overflow: hidden;
+  background: linear-gradient(135deg, #f0f2f6 0%, #e2e8f0 50%, #f0f2f6 100%);
 }
 
 /* Animated grid background */
@@ -13,8 +14,8 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(0, 212, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 212, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(8, 145, 178, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 145, 178, 0.04) 1px, transparent 1px);
   background-size: 60px 60px;
   animation: grid-move 20s linear infinite;
 }
@@ -35,28 +36,28 @@
 .login-orb-1 {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(0, 212, 255, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(8, 145, 178, 0.08) 0%, transparent 70%);
   top: -100px;
   right: -100px;
-  animation: float 8s ease-in-out infinite;
+  animation: float-subtle 8s ease-in-out infinite;
 }
 
 .login-orb-2 {
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.06) 0%, transparent 70%);
   bottom: -50px;
   left: -50px;
-  animation: float 10s ease-in-out infinite reverse;
+  animation: float-subtle 10s ease-in-out infinite reverse;
 }
 
 .login-orb-3 {
   width: 200px;
   height: 200px;
-  background: radial-gradient(circle, rgba(0, 255, 136, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(5, 150, 105, 0.05) 0%, transparent 70%);
   top: 50%;
   left: 50%;
-  animation: float 6s ease-in-out infinite;
+  animation: float-subtle 6s ease-in-out infinite;
 }
 
 .login-container {
@@ -64,15 +65,13 @@
   width: 420px;
   max-width: 90vw;
   padding: 2.5rem;
-  background: rgba(10, 10, 20, 0.75);
+  background: var(--bg-secondary);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
-  border: 1px solid rgba(0, 212, 255, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 20px;
-  box-shadow:
-    0 0 60px rgba(0, 212, 255, 0.05),
-    0 20px 60px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: var(--shadow-xl);
+  animation: fade-in-scale 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Logo */
@@ -88,20 +87,20 @@
   justify-content: center;
   width: 72px;
   height: 72px;
-  background: rgba(0, 212, 255, 0.08);
-  border: 1px solid rgba(0, 212, 255, 0.2);
+  background: var(--accent-cyan-dim);
+  border: 1px solid rgba(8, 145, 178, 0.2);
   border-radius: 18px;
   color: var(--accent-cyan);
   margin-bottom: 1rem;
-  animation: pulse-glow 3s ease-in-out infinite;
+  animation: pulse-soft 3s ease-in-out infinite;
 }
 
 .login-logo-ring {
   position: absolute;
   inset: -6px;
-  border: 1px solid rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(8, 145, 178, 0.1);
   border-radius: 22px;
-  animation: pulse-glow 3s ease-in-out infinite 0.5s;
+  animation: pulse-soft 3s ease-in-out infinite 0.5s;
 }
 
 .login-title {
@@ -137,7 +136,7 @@
   font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 2px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .login-password-wrap {
@@ -158,7 +157,7 @@
   color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
-  transition: color 0.2s;
+  transition: color 0.2s ease;
 }
 
 .login-eye-btn:hover {
@@ -171,11 +170,12 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: rgba(255, 51, 102, 0.08);
-  border: 1px solid rgba(255, 51, 102, 0.15);
+  background: var(--accent-red-dim);
+  border: 1px solid rgba(220, 38, 38, 0.15);
   border-radius: 8px;
   color: var(--accent-red);
   font-size: 0.8rem;
+  animation: fade-in-scale 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .login-error-dot {
@@ -184,29 +184,29 @@
   border-radius: 50%;
   background: var(--accent-red);
   flex-shrink: 0;
-  box-shadow: 0 0 8px var(--accent-red);
 }
 
 /* Buttons */
 .login-btn-primary {
   width: 100%;
   padding: 0.85rem;
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 212, 255, 0.05) 100%);
-  border: 1px solid rgba(0, 212, 255, 0.3);
+  background: var(--accent-cyan);
+  border: 1px solid var(--accent-cyan);
   border-radius: 10px;
-  color: var(--accent-cyan);
+  color: #fff;
   font-family: 'Orbitron', sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 3px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
 }
 
 .login-btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.25) 0%, rgba(0, 212, 255, 0.1) 100%);
-  box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+  background: #0e7490;
+  border-color: #0e7490;
+  box-shadow: var(--glow-cyan);
   transform: translateY(-1px);
 }
 
@@ -226,30 +226,43 @@
   width: 100%;
   padding: 0.7rem;
   background: transparent;
-  border: 1px solid rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(124, 58, 237, 0.2);
   border-radius: 10px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-family: 'Inter', sans-serif;
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 1px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
 }
 
 .login-btn-demo:hover:not(:disabled) {
-  border-color: rgba(168, 85, 247, 0.4);
+  border-color: rgba(124, 58, 237, 0.4);
   color: var(--accent-purple);
-  background: rgba(168, 85, 247, 0.05);
+  background: var(--accent-purple-dim);
+  transform: translateY(-1px);
 }
 
 .login-footer {
   text-align: center;
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
   font-size: 0.65rem;
   letter-spacing: 1px;
   text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.login-footer a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.login-footer a:hover {
+  color: #0e7490;
 }

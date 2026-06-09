@@ -1,11 +1,11 @@
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, Stars } from '@react-three/drei';
-import { EffectComposer, Bloom, ChromaticAberration, Noise } from '@react-three/postprocessing';
+import { Float } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
 /* ─── Floating Particles ─── */
-function Particles({ count = 800 }) {
+function Particles({ count = 400 }) {
   const mesh = useRef<THREE.Points>(null!);
   const positions = useMemo(() => {
     const pos = new Float32Array(count * 3);
@@ -20,9 +20,9 @@ function Particles({ count = 800 }) {
   const colors = useMemo(() => {
     const col = new Float32Array(count * 3);
     const palette = [
-      [0, 0.83, 1],    // cyan
-      [0.4, 0.2, 1],   // purple
-      [0, 1, 0.53],    // green
+      [0.03, 0.57, 0.70],  // cyan (softer)
+      [0.48, 0.23, 0.93],  // purple (softer)
+      [0.02, 0.59, 0.41],  // green (softer)
     ];
     for (let i = 0; i < count; i++) {
       const c = palette[Math.floor(Math.random() * palette.length)];
@@ -35,8 +35,8 @@ function Particles({ count = 800 }) {
 
   useFrame((_, delta) => {
     if (mesh.current) {
-      mesh.current.rotation.y += delta * 0.015;
-      mesh.current.rotation.x += delta * 0.008;
+      mesh.current.rotation.y += delta * 0.008;
+      mesh.current.rotation.x += delta * 0.004;
     }
   });
 
@@ -47,10 +47,10 @@ function Particles({ count = 800 }) {
         <bufferAttribute args={[colors, 3]} attach="attributes-color" />
       </bufferGeometry>
       <pointsMaterial
-        size={0.04}
+        size={0.025}
         vertexColors
         transparent
-        opacity={0.7}
+        opacity={0.35}
         sizeAttenuation
         blending={THREE.AdditiveBlending}
         depthWrite={false}
@@ -65,7 +65,7 @@ function CyberGrid() {
 
   useFrame((_, delta) => {
     if (gridRef.current) {
-      gridRef.current.position.z += delta * 0.3;
+      gridRef.current.position.z += delta * 0.2;
       if (gridRef.current.position.z > 2) {
         gridRef.current.position.z = -2;
       }
@@ -75,7 +75,7 @@ function CyberGrid() {
   return (
     <gridHelper
       ref={gridRef}
-      args={[60, 60, 0x0066ff, 0x003388]}
+      args={[60, 60, 0x0066ff, 0x8899bb]}
       position={[0, -8, 0]}
     />
   );
@@ -87,22 +87,22 @@ function FloatingOctahedron({ position }: { position: [number, number, number] }
 
   useFrame((state) => {
     if (mesh.current) {
-      mesh.current.rotation.x = state.clock.elapsedTime * 0.3;
-      mesh.current.rotation.y = state.clock.elapsedTime * 0.5;
+      mesh.current.rotation.x = state.clock.elapsedTime * 0.2;
+      mesh.current.rotation.y = state.clock.elapsedTime * 0.3;
     }
   });
 
   return (
-    <Float speed={1.5} rotationIntensity={0.5} floatIntensity={2}>
+    <Float speed={1.2} rotationIntensity={0.3} floatIntensity={1.5}>
       <mesh ref={mesh} position={position}>
-        <octahedronGeometry args={[0.4, 0]} />
+        <octahedronGeometry args={[0.3, 0]} />
         <meshStandardMaterial
-          color="#00d4ff"
+          color="#0891b2"
           wireframe
           transparent
-          opacity={0.3}
-          emissive="#00d4ff"
-          emissiveIntensity={0.5}
+          opacity={0.15}
+          emissive="#0891b2"
+          emissiveIntensity={0.2}
         />
       </mesh>
     </Float>
@@ -114,22 +114,22 @@ function FloatingTorus({ position }: { position: [number, number, number] }) {
 
   useFrame((state) => {
     if (mesh.current) {
-      mesh.current.rotation.x = state.clock.elapsedTime * 0.2;
-      mesh.current.rotation.z = state.clock.elapsedTime * 0.4;
+      mesh.current.rotation.x = state.clock.elapsedTime * 0.15;
+      mesh.current.rotation.z = state.clock.elapsedTime * 0.25;
     }
   });
 
   return (
-    <Float speed={2} rotationIntensity={0.3} floatIntensity={1.5}>
+    <Float speed={1.5} rotationIntensity={0.2} floatIntensity={1.2}>
       <mesh ref={mesh} position={position}>
-        <torusGeometry args={[0.5, 0.12, 8, 16]} />
+        <torusGeometry args={[0.4, 0.08, 8, 16]} />
         <meshStandardMaterial
-          color="#a855f7"
+          color="#7c3aed"
           wireframe
           transparent
-          opacity={0.2}
-          emissive="#a855f7"
-          emissiveIntensity={0.4}
+          opacity={0.12}
+          emissive="#7c3aed"
+          emissiveIntensity={0.2}
         />
       </mesh>
     </Float>
@@ -141,70 +141,25 @@ function FloatingIcosahedron({ position }: { position: [number, number, number] 
 
   useFrame((state) => {
     if (mesh.current) {
-      mesh.current.rotation.y = state.clock.elapsedTime * 0.15;
-      mesh.current.rotation.z = state.clock.elapsedTime * 0.25;
+      mesh.current.rotation.y = state.clock.elapsedTime * 0.12;
+      mesh.current.rotation.z = state.clock.elapsedTime * 0.18;
     }
   });
 
   return (
-    <Float speed={1} rotationIntensity={0.4} floatIntensity={2.5}>
+    <Float speed={0.8} rotationIntensity={0.3} floatIntensity={1.8}>
       <mesh ref={mesh} position={position}>
-        <icosahedronGeometry args={[0.6, 0]} />
+        <icosahedronGeometry args={[0.4, 0]} />
         <meshStandardMaterial
-          color="#00ff88"
+          color="#059669"
           wireframe
           transparent
-          opacity={0.15}
-          emissive="#00ff88"
-          emissiveIntensity={0.3}
+          opacity={0.1}
+          emissive="#059669"
+          emissiveIntensity={0.15}
         />
       </mesh>
     </Float>
-  );
-}
-
-/* ─── Data Stream Lines ─── */
-function DataStreams() {
-  const group = useRef<THREE.Group>(null!);
-
-  useFrame(() => {
-    if (group.current) {
-      group.current.children.forEach((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.position) {
-          mesh.position.y -= 0.02;
-          if (mesh.position.y < -10) {
-            mesh.position.y = 10;
-            mesh.position.x = (Math.random() - 0.5) * 30;
-          }
-        }
-      });
-    }
-  });
-
-  const streams = useMemo(() => {
-    return Array.from({ length: 20 }, (_, i) => ({
-      key: i,
-      position: [(Math.random() - 0.5) * 30, Math.random() * 20 - 10, (Math.random() - 0.5) * 15 - 5] as [number, number, number],
-      scale: [0.01, Math.random() * 2 + 1, 0.01] as [number, number, number],
-      color: i % 3 === 0 ? '#00d4ff' : i % 3 === 1 ? '#a855f7' : '#00ff88',
-    }));
-  }, []);
-
-  return (
-    <group ref={group}>
-      {streams.map((s) => (
-        <mesh key={s.key} position={s.position} scale={s.scale}>
-          <cylinderGeometry args={[1, 1, 1, 4]} />
-          <meshBasicMaterial
-            color={s.color}
-            transparent
-            opacity={0.15}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-      ))}
-    </group>
   );
 }
 
@@ -212,14 +167,12 @@ function DataStreams() {
 function Scene3D() {
   return (
     <>
-      <ambientLight intensity={0.1} />
-      <pointLight position={[10, 10, 10]} intensity={0.3} color="#00d4ff" />
-      <pointLight position={[-10, -10, -5]} intensity={0.2} color="#a855f7" />
-      <pointLight position={[0, 5, -10]} intensity={0.15} color="#00ff88" />
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[5, 10, 5]} intensity={0.3} color="#ffffff" />
+      <directionalLight position={[-5, 5, -5]} intensity={0.15} color="#0891b2" />
 
-      <Particles count={600} />
+      <Particles count={400} />
       <CyberGrid />
-      <DataStreams />
 
       <FloatingOctahedron position={[-6, 2, -5]} />
       <FloatingOctahedron position={[8, -3, -8]} />
@@ -228,17 +181,13 @@ function Scene3D() {
       <FloatingIcosahedron position={[0, 5, -10]} />
       <FloatingIcosahedron position={[-5, -4, -7]} />
 
-      <Stars radius={50} depth={50} count={1500} factor={3} saturation={0.5} fade speed={0.5} />
-
       <EffectComposer>
         <Bloom
-          luminanceThreshold={0.1}
-          luminanceSmoothing={0.9}
-          intensity={0.8}
-          radius={0.8}
+          luminanceThreshold={0.3}
+          luminanceSmoothing={0.7}
+          intensity={0.3}
+          radius={0.5}
         />
-        <ChromaticAberration offset={new THREE.Vector2(0.0005, 0.0005)} />
-        <Noise opacity={0.03} />
       </EffectComposer>
     </>
   );
@@ -256,6 +205,7 @@ export function Scene3DBackground() {
         height: '100vh',
         zIndex: 0,
         pointerEvents: 'none',
+        opacity: 0.5,
       }}
     >
       <Canvas

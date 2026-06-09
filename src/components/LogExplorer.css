@@ -9,16 +9,18 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .log-header h2 {
   font-size: 1.75rem;
   font-weight: 600;
   margin-bottom: 0.25rem;
+  color: var(--text-bright);
 }
 
 .active-live {
-  background: rgba(45, 212, 191, 0.1);
+  background: var(--accent-cyan-dim);
   color: var(--accent-cyan);
   border-color: var(--accent-cyan);
 }
@@ -40,23 +42,24 @@
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
+  color: var(--text-muted);
 }
 
 .search-input {
   width: 100%;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-glass);
-  border-radius: 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
   padding: 0.75rem 1rem 0.75rem 3rem;
   color: var(--text-primary);
   font-size: 0.9rem;
   outline: none;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-input:focus {
   border-color: var(--accent-cyan);
-  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.2);
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
 }
 
 .search-filters {
@@ -65,20 +68,27 @@
 }
 
 .filter-btn {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-glass);
+  background: var(--bg-tertiary);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   color: var(--text-secondary);
   padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .filter-btn:hover {
-  background: rgba(0, 212, 255, 0.06);
-  color: var(--text-primary);
-  border-color: rgba(0, 212, 255, 0.15);
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
+  border-color: rgba(8, 145, 178, 0.15);
+}
+
+.filter-btn.active {
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
+  border-color: rgba(8, 145, 178, 0.2);
+  font-weight: 600;
 }
 
 .log-viewer {
@@ -90,17 +100,19 @@
 
 .log-viewer-header {
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border-glass);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
   gap: 0.75rem;
   font-weight: 500;
-  background: rgba(0, 212, 255, 0.03);
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
 }
 
 .log-count {
   margin-left: auto;
   font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
 .log-table-container {
@@ -118,24 +130,24 @@
 .log-table th {
   position: sticky;
   top: 0;
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary);
   padding: 0.75rem 1.25rem;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-weight: 600;
-  border-bottom: 1px solid var(--border-glass);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   z-index: 10;
 }
 
 .log-row {
-  border-bottom: 1px solid var(--border-glass);
-  transition: background 0.1s ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .log-row:hover {
-  background: rgba(0, 212, 255, 0.03);
+  background: var(--accent-cyan-dim);
   cursor: pointer;
 }
 
@@ -157,41 +169,41 @@
 
 .log-level {
   padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.05em;
 }
 
 .level-critical {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(220, 38, 38, 0.08);
   color: var(--accent-red);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(220, 38, 38, 0.15);
 }
 
 .level-error {
-  background: rgba(245, 158, 11, 0.15);
+  background: rgba(217, 119, 6, 0.08);
   color: var(--accent-yellow);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(217, 119, 6, 0.15);
 }
 
 .level-warning {
-  background: rgba(59, 130, 246, 0.15);
+  background: rgba(37, 99, 235, 0.08);
   color: var(--accent-blue);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(37, 99, 235, 0.15);
 }
 
 .level-info {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-tertiary);
   color: var(--text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .source-badge {
-  background: rgba(45, 212, 191, 0.1);
+  background: var(--accent-cyan-dim);
   color: var(--accent-cyan);
   padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.75rem;
 }
 

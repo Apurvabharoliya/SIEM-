@@ -4,9 +4,9 @@
   top: 0;
   bottom: 0;
   width: 380px;
-  background: rgba(10, 10, 20, 0.92);
-  border-left: 1px solid rgba(0, 212, 255, 0.1);
-  box-shadow: -5px 0 40px rgba(0, 0, 0, 0.6), -2px 0 20px rgba(0, 212, 255, 0.05);
+  background: var(--bg-secondary);
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: -5px 0 40px rgba(0, 0, 0, 0.08), -2px 0 20px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   z-index: 1000;
@@ -14,12 +14,7 @@
 }
 
 .animate-slide-in {
-  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes slideInRight {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  animation: slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .copilot-header {
@@ -27,7 +22,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem;
-  border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .copilot-header h3 {
@@ -35,6 +30,9 @@
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .btn-icon {
@@ -43,7 +41,7 @@
   color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,7 +49,7 @@
 }
 
 .btn-icon:hover {
-  background: var(--bg-glass-hover);
+  background: var(--bg-tertiary);
   color: var(--text-primary);
 }
 
@@ -66,11 +64,12 @@
 
 .message {
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 0.9rem;
   line-height: 1.5;
   max-width: 85%;
   position: relative;
+  animation: fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .message p {
@@ -79,17 +78,18 @@
 
 .message-user {
   align-self: flex-end;
-  background-color: rgba(0, 212, 255, 0.1);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  color: var(--text-primary);
+  background: var(--accent-cyan);
+  border: none;
+  color: #fff;
+  border-bottom-right-radius: 4px;
 }
 
 .message-system {
   align-self: flex-start;
-  background-color: var(--bg-glass);
-  border: 1px solid var(--border-glass);
-  color: var(--text-secondary);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  color: var(--text-primary);
   padding-left: 2.5rem;
+  border-bottom-left-radius: 4px;
 }
 
 .message-icon {
@@ -101,40 +101,43 @@
 
 .copilot-input-area {
   padding: 1.5rem;
-  border-top: 1px solid rgba(0, 212, 255, 0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   gap: 0.5rem;
 }
 
 .copilot-input-area input {
   flex: 1;
-  background-color: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-glass);
-  border-radius: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
   padding: 0.75rem 1rem;
   color: var(--text-primary);
   font-family: inherit;
   font-size: 0.9rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .copilot-input-area input:focus {
   outline: none;
   border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
 }
 
 .btn-send {
-  background-color: var(--accent-cyan);
-  color: #000;
+  background: var(--accent-cyan);
+  color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   padding: 0 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-send:hover {
-  opacity: 0.9;
+  background: #0e7490;
+  transform: scale(1.05);
 }

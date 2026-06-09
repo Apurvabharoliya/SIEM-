@@ -26,14 +26,37 @@
   text-align: center;
   padding: 3rem 2rem;
   gap: 1rem;
+  opacity: 0;
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.upload-card:nth-child(1) { animation-delay: 0.1s; }
+.upload-card:nth-child(2) { animation-delay: 0.2s; }
+
 .card-icon {
-  background: var(--bg-glass);
+  background: var(--accent-cyan-dim);
   padding: 1.5rem;
   border-radius: 50%;
-  border: 1px solid var(--border-glass);
+  border: 1px solid rgba(8, 145, 178, 0.15);
   margin-bottom: 1rem;
+  color: var(--accent-cyan);
+  transition: transform 0.25s ease;
+}
+
+.upload-card:hover .card-icon {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.upload-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.upload-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 280px;
 }
 
 .upload-zone {
@@ -46,19 +69,24 @@
 }
 
 .btn-upload {
-  background-color: var(--accent-cyan);
-  color: #000;
+  background: var(--accent-cyan);
+  color: #fff;
   padding: 0.8rem 1.5rem;
-  border-radius: 6px;
+  border: none;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 500;
   display: inline-flex;
-  transition: opacity 0.2s;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   justify-content: center;
 }
 
 .btn-upload:hover {
-  opacity: 0.9;
+  background: #0e7490;
+  transform: translateY(-1px);
+  box-shadow: var(--glow-cyan);
 }
 
 .url-input-group {
@@ -70,45 +98,50 @@
 
 .url-input {
   flex: 1;
-  background-color: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-glass);
-  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
   padding: 0.8rem 1rem;
   color: var(--text-primary);
   font-family: inherit;
+  font-size: 0.9rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .url-input:focus {
   outline: none;
   border-color: var(--accent-purple);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
 .status-message {
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 1rem;
   font-weight: 500;
+  animation: fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .status-message.success {
-  border-left: 4px solid var(--accent-green);
+  background: var(--accent-green-dim);
+  border: 1px solid rgba(5, 150, 105, 0.15);
+  color: var(--accent-green);
 }
 
 .status-message.error {
-  border-left: 4px solid var(--accent-red);
+  background: var(--accent-red-dim);
+  border: 1px solid rgba(220, 38, 38, 0.15);
+  color: var(--accent-red);
 }
 
 .status-message.info {
-  border-left: 4px solid var(--accent-cyan);
+  background: var(--accent-cyan-dim);
+  border: 1px solid rgba(8, 145, 178, 0.15);
+  color: var(--accent-cyan);
 }
 
 .spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  animation: spin 0.8s linear infinite;
 }

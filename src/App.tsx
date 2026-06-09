@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Bot } from 'lucide-react';
+import { Bot, AlertTriangle } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
 import { DashboardOverview } from './components/DashboardOverview';
 import { LogExplorer } from './components/LogExplorer';
@@ -13,6 +13,7 @@ import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { GlobalStateProvider } from './context/GlobalState';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { useGlobalState } from './context/GlobalState';
 import { Scene3DBackground } from './components/Scene3D';
 import './index.css';
 
@@ -23,6 +24,36 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   return <>{children}</>;
 };
+
+/** Error banner displayed when backend data fetching fails */
+function DataErrorBanner() {
+  const { error } = useGlobalState();
+  if (!error) return null;
+  return (
+    <div style={{
+      position: 'fixed',
+      top: '1rem',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      zIndex: 9999,
+      padding: '0.75rem 1.5rem',
+      background: 'rgba(255, 51, 102, 0.12)',
+      border: '1px solid rgba(255, 51, 102, 0.25)',
+      borderRadius: '10px',
+      color: 'var(--accent-red)',
+      fontSize: '0.85rem',
+      fontWeight: 500,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      backdropFilter: 'blur(16px)',
+      boxShadow: '0 4px 30px rgba(0,0,0,0.4)',
+    }}>
+      <AlertTriangle size={18} />
+      <span>{error}</span>
+    </div>
+  );
+}
 
 function App() {
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
@@ -35,6 +66,7 @@ function App() {
             {/* 3D Background - behind everything */}
             <Scene3DBackground />
 
+            <DataErrorBanner />
             <Sidebar />
             <main className="main-content relative">
               <Routes>

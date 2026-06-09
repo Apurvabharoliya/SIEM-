@@ -3,163 +3,205 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import mysql from 'mysql2/promise';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
-// MySQL connection pool
-const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+// ── Supabase client ───────────────────────────────────────────
+// service_role key bypasses RLS – used for all server-side ops.
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-// Initialize required tables if they don't exist
-(async () => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(255) NOT NULL UNIQUE,
-        password VARCHAR(255) NOT NULL,
-        role VARCHAR(50) NOT NULL DEFAULT 'Analyst'
-      ) ENGINE=INNODB;
-    `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS logs (
-        id VARCHAR(255) PRIMARY KEY,
-        timestamp VARCHAR(255),
-        source VARCHAR(255),
-        level VARCHAR(50),
-        message TEXT,
-        path VARCHAR(255)
-      ) ENGINE=INNODB;
-    `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS threats (
-        id VARCHAR(255) PRIMARY KEY,
-        time VARCHAR(255),
-        source VARCHAR(255),
-        type VARCHAR(255),
-        severity VARCHAR(50),
-        status VARCHAR(50)
-      ) ENGINE=INNODB;
-    `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS incidents (
-        id VARCHAR(255) PRIMARY KEY,
-        title VARCHAR(255),
-        status VARCHAR(50),
-        severity VARCHAR(50),
-        assignee VARCHAR(255),
-        created VARCHAR(255),
-        type VARCHAR(255)
-      ) ENGINE=INNODB;
-    `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS metrics (
-        id INT PRIMARY KEY DEFAULT 1,
-        criticalAlerts INT DEFAULT 0,
-        eventsPerSecond INT DEFAULT 0,
-        activeEndpoints INT DEFAULT 0
-      ) ENGINE=INNODB;
-    `);
-    // Ensure a demo user exists
-    const [demoRows] = await pool.query('SELECT id FROM users WHERE username = ?', ['demo_user']);
-    if (demoRows.length === 0) {
-      const demoPassword = await bcrypt.hash('demo_pass', 10);
-      await pool.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['demo_user', demoPassword, 'Analyst']);
-      console.log('Demo user created: demo_user / demo_pass');
-    }
-    console.log('Database tables initialized successfully');
-  } catch (err) {
-    console.error('Error initializing DB:', err);
-  }
-})();
-
-
+// ── Express + Socket.IO ───────────────────────────────────────
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+  cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 
 app.use(cors());
 app.use(express.json());
 
-// Middleware for checking auth
-const authenticate = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
-  jwt.verify(token, process.env.JWT_SECRET || 'secret', (err, decoded) => {
-    if (err) return res.status(401).json({ error: 'Unauthorized' });
-    req.user = decoded;
+// ── Auth middleware (JWT verification via Supabase) ────────────
+const authenticate = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized – missing token' });
+  }
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) {
+      return res.status(401).json({ error: 'Unauthorized – invalid or expired token' });
+    }
+    req.user = user;
     next();
-  });
+  } catch {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 };
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// ── Health check ──────────────────────────────────────────────
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Auth Endpoints
+// ── Auth endpoints ────────────────────────────────────────────
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { username, password, role } = req.body;
-    const [rows] = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
-    if (rows.length) return res.status(400).json({ error: 'User already exists' });
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await pool.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPassword, role || 'Analyst']);
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    // 1. Create auth user in Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: `${username}@sentinel.local`,
+      password,
+      email_confirm: true,
+    });
+    if (authError) {
+      if (authError.message?.includes('already registered')) {
+        return res.status(400).json({ error: 'User already exists' });
+      }
+      throw authError;
+    }
+
+    // 2. Insert profile row
+    const { error: profileError } = await supabase.from('users').insert({
+      id: authData.user.id,
+      username,
+      role: role || 'Analyst',
+    });
+    if (profileError) throw profileError;
+
     res.json({ message: 'User registered successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Registration failed' });
+    console.error('Registration error:', error);
+    res.status(500).json({ error: error.message || 'Registration failed' });
   }
 });
 
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    const [rows] = await pool.query('SELECT id, password, role FROM users WHERE username = ?', [username]);
-    if (rows.length === 0) return res.status(400).json({ error: 'Invalid credentials' });
-    const user = rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
-    const token = jwt.sign({ id: user.id, role: user.role, username }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
-    res.json({ token, user: { id: user.id, username, role: user.role } });
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    // Sign in via Supabase Auth (using the email convention)
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: `${username}@sentinel.local`,
+      password,
+    });
+    if (error) return res.status(400).json({ error: 'Invalid credentials' });
+
+    // Fetch profile
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, username, role')
+      .eq('id', data.user.id)
+      .single();
+
+    res.json({
+      token: data.session.access_token,
+      user: {
+        id: profile?.id || data.user.id,
+        username: profile?.username || username,
+        role: profile?.role || 'Analyst',
+      },
+    });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
   }
 });
 
-// Demo login – returns a token for a preset demo user without password
-app.post('/api/auth/demo-login', async (req, res) => {
+// Demo login – auto-creates the auth user on first call, then
+// returns a JWT + profile.  Idempotent – safe to call repeatedly.
+app.post('/api/auth/demo-login', async (_req, res) => {
   try {
-    const demoUsername = 'demo_user';
-    const [rows] = await pool.query('SELECT id, role FROM users WHERE username = ?', [demoUsername]);
-    if (rows.length === 0) return res.status(500).json({ error: 'Demo user not found' });
-    const user = rows[0];
-    const token = jwt.sign({ id: user.id, role: user.role, username: demoUsername }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
-    res.json({ token, user: { id: user.id, username: demoUsername, role: user.role } });
+    const DEMO_EMAIL = 'demo_user@sentinel.local';
+    const DEMO_PASS  = 'demo_pass';
+
+    // Try signing in first
+    let { data, error } = await supabase.auth.signInWithPassword({
+      email: DEMO_EMAIL,
+      password: DEMO_PASS,
+    });
+
+    // If auth user doesn't exist yet, create via admin API
+    if (error) {
+      const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+        email: DEMO_EMAIL,
+        password: DEMO_PASS,
+        email_confirm: true,
+      });
+      if (createErr) throw createErr;
+
+      // Ensure profile row exists
+      await supabase.from('users').upsert({
+        id: created.user.id,
+        username: 'demo_user',
+        role: 'Analyst',
+      }, { onConflict: 'username' });
+
+      // Sign in after creation
+      const { data: retry, error: retryErr } = await supabase.auth.signInWithPassword({
+        email: DEMO_EMAIL,
+        password: DEMO_PASS,
+      });
+      if (retryErr) throw retryErr;
+
+      return res.json({
+        token: retry.session.access_token,
+        user: { id: created.user.id, username: 'demo_user', role: 'Analyst' },
+      });
+    }
+
+    // Fetch or upsert profile
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, username, role')
+      .eq('username', 'demo_user')
+      .maybeSingle();
+
+    if (!profile) {
+      await supabase.from('users').upsert({
+        id: data.user.id,
+        username: 'demo_user',
+        role: 'Analyst',
+      }, { onConflict: 'username' });
+    }
+
+    res.json({
+      token: data.session.access_token,
+      user: {
+        id: profile?.id || data.user.id,
+        username: 'demo_user',
+        role: profile?.role || 'Analyst',
+      },
+    });
   } catch (err) {
     console.error('Demo login error:', err);
-    res.status(500).json({ error: 'Demo login failed' });
+    res.status(500).json({ error: 'Demo login failed. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.' });
   }
 });
 
-// Protected API routes – logs, threats, incidents, metrics
-app.get('/api/logs', authenticate, async (req, res) => {
+// ── Protected data endpoints ──────────────────────────────────
+// Each endpoint reads from Supabase with the service_role client
+// (bypassing RLS) and returns JSON consumable by the frontend.
+
+app.get('/api/logs', authenticate, async (_req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM logs');
+    const { data: rows, error } = await supabase
+      .from('logs')
+      .select('*')
+      .order('timestamp', { ascending: false });
+    if (error) throw error;
     res.json({ logs: rows });
   } catch (err) {
     console.error('Fetch logs error:', err);
@@ -167,9 +209,13 @@ app.get('/api/logs', authenticate, async (req, res) => {
   }
 });
 
-app.get('/api/threats', authenticate, async (req, res) => {
+app.get('/api/threats', authenticate, async (_req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM threats');
+    const { data: rows, error } = await supabase
+      .from('threats')
+      .select('*')
+      .order('time', { ascending: false });
+    if (error) throw error;
     res.json({ threats: rows });
   } catch (err) {
     console.error('Fetch threats error:', err);
@@ -177,9 +223,13 @@ app.get('/api/threats', authenticate, async (req, res) => {
   }
 });
 
-app.get('/api/incidents', authenticate, async (req, res) => {
+app.get('/api/incidents', authenticate, async (_req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM incidents');
+    const { data: rows, error } = await supabase
+      .from('incidents')
+      .select('*')
+      .order('created', { ascending: false });
+    if (error) throw error;
     res.json({ incidents: rows });
   } catch (err) {
     console.error('Fetch incidents error:', err);
@@ -187,27 +237,40 @@ app.get('/api/incidents', authenticate, async (req, res) => {
   }
 });
 
-app.get('/api/metrics', authenticate, async (req, res) => {
+app.get('/api/metrics', authenticate, async (_req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM metrics WHERE id = 1');
-    res.json({ metrics: rows[0] || {} });
+    const { data: row, error } = await supabase
+      .from('metrics')
+      .select('*')
+      .eq('id', 1)
+      .maybeSingle();
+    if (error) throw error;
+    res.json({ metrics: row || {} });
   } catch (err) {
     console.error('Fetch metrics error:', err);
     res.status(500).json({ error: 'Failed to fetch metrics' });
   }
 });
-// AI Copilot Chat Endpoint
+
+// ── AI Copilot Chat ───────────────────────────────────────────
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, context } = req.body;
     const { metrics, threats, incidents } = context || {};
-    await new Promise(resolve => setTimeout(resolve, 800));
-    let response = "I've analyzed the recent logs. No immediate anomalies detected in the current timeframe.";
+
+    await new Promise((r) => setTimeout(r, 800));
+
+    let response =
+      "I've analyzed the recent logs. No immediate anomalies detected in the current timeframe.";
+
     const q = message.toLowerCase();
+
     if (q.includes('status') || q.includes('report') || q.includes('summary')) {
       response = `Current SOC Status: We are processing ${metrics?.eventsPerSecond || 0} events per second across ${metrics?.activeEndpoints || 0} endpoints. There are currently ${metrics?.criticalAlerts || 0} critical alerts requiring attention.`;
     } else if (q.includes('threat') || q.includes('attack') || q.includes('sql') || q.includes('brute')) {
-      const criticalThreats = (threats || []).filter(t => t.severity === 'Critical' || t.severity === 'High');
+      const criticalThreats = (threats || []).filter(
+        (t) => t.severity === 'Critical' || t.severity === 'High'
+      );
       if (criticalThreats.length > 0) {
         const latest = criticalThreats[0];
         response = `I've identified ${criticalThreats.length} high/critical threats. The most recent is a [${latest.type}] from ${latest.source}. I recommend investigating this in the Incidents module.`;
@@ -215,15 +278,16 @@ app.post('/api/chat', async (req, res) => {
         response = "I don't see any critical threats in the recent timeline. The environment appears stable.";
       }
     } else if (q.includes('incident') || q.includes('case') || q.includes('open')) {
-      const openIncidents = (incidents || []).filter(i => i.status === 'Open');
+      const openIncidents = (incidents || []).filter((i) => i.status === 'Open');
       if (openIncidents.length > 0) {
         response = `You have ${openIncidents.length} open incidents. The most recent one is "${openIncidents[0].title}". You should assign this to an analyst immediately.`;
       } else {
-        response = "There are no open incidents at this time. Great job keeping the queue clean!";
+        response = 'There are no open incidents at this time. Great job keeping the queue clean!';
       }
     } else if (metrics?.criticalAlerts > 0) {
       response = `I'm monitoring the environment. Please note we have ${metrics.criticalAlerts} critical alerts pending review. Let me know if you want me to analyze a specific vector.`;
     }
+
     res.json({ response });
   } catch (error) {
     console.error('Chat API Error:', error);
@@ -231,21 +295,23 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Socket.io connection handling – emit real-time events from DB change streams
+// ── Socket.IO ─────────────────────────────────────────────────
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-
-  // Emit log events directly after insertion; MySQL does not provide change streams.
-  // Clients will receive events from the upload endpoint above.
-
-  // Threat event emission can be added in respective endpoints when threats are created.
-
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
 });
 
+// ── Start ─────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log('');
+  console.log('  ╔═══════════════════════════════════════════╗');
+  console.log('  ║     SENTINEL SIEM – Backend Server       ║');
+  console.log('  ║     Powered by Supabase                  ║');
+  console.log('  ╚═══════════════════════════════════════════╝');
+  console.log(`  › Server running on http://localhost:${PORT}`);
+  console.log(`  › Supabase: ${process.env.SUPABASE_URL || 'not configured'}`);
+  console.log('');
 });

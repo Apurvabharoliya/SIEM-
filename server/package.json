@@ -1,7 +1,7 @@
 {
   "name": "server",
-  "version": "1.0.0",
-  "description": "",
+  "version": "2.0.0",
+  "description": "Sentinel SIEM backend powered by Supabase",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -12,12 +12,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^6.0.0",
+    "@supabase/supabase-js": "^2.49.4",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.22.4",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
